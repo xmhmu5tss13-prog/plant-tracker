@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plant Care Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --border: #e2ddd6;
+    --text: #1a1a18;
+    --muted: #7a7770;
+    --green: #2d6a4f;
+    --green-bg: #d8f3dc;
+    --amber: #b45309;
+    --amber-bg: #fef3c7;
+    --red: #9b1c1c;
+    --red-bg: #fee2e2;
+    --accent: #2d6a4f;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 5rem;
+  }
+
+  .overview {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .stat-num.red { color: var(--red); }
+  .stat-num.amber { color: var(--amber); }
+  .stat-num.green { color: var(--green); }
+
+  .section-head {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.125rem;
+    margin-bottom: 8px;
+    transition: box-shadow 0.15s;
+  }
+
+  .task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+  .task-card.overdue { border-left: 3px solid var(--red); }
+  .task-card.soon    { border-left: 3px solid var(--amber); }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .plant-name {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  .task-name {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .badge.red    { background: var(--red-bg);   color: var(--red);   }
+  .badge.amber  { background: var(--amber-bg); color: var(--amber); }
+  .badge.green  { background: var(--green-bg); color: var(--green); }
+
+  .bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  .bar-fill.red   { background: var(--red); }
+  .bar-fill.amber { background: var(--amber); }
+  .bar-fill.green { background: var(--green); }
+
+  .card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .next-date {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .done-btn {
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .done-btn:hover {
+    background: var(--green-bg);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .done-btn:active { transform: scale(0.96); }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 0.15s;
+    margin-left: 6px;
+  }
+
+  .del-btn:hover { color: var(--red); }
+
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .fab {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-size: 26px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(45,106,79,0.35);
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 20;
+  }
+
+  .fab:hover { transform: scale(1.07); box-shadow: 0 6px 20px rgba(45,106,79,0.45); }
+  .fab:active { transform: scale(0.96); }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 30;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 1.5rem 1.25rem 2rem;
+    width: 100%;
+    max-width: 480px;
+    transform: translateY(30px);
+    transition: transform 0.25s ease;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-row { margin-bottom: 12px; }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  input[type=text], input[type=number], input[type=date] {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus { border-color: var(--accent); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+  }
+
+  .submit-btn:hover { opacity: 0.88; }
+
+  .cancel-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🌿 Plant Tracker</span>
+  <span class="header-sub" id="today-str"></span>
+</header>
+
+<main>
+  <div class="overview">
+    <div class="stat"><div class="stat-num red" id="cnt-due">0</div><div class="stat-label">期日超過</div></div>
+    <div class="stat"><div class="stat-num amber" id="cnt-soon">0</div><div class="stat-label">あと2日以内</div></div>
+    <div class="stat"><div class="stat-num green" id="cnt-ok">0</div><div class="stat-label">余裕あり</div></div>
+  </div>
+
+  <div class="section-head">タスク一覧</div>
+  <div id="task-list"></div>
+</main>
+
+<button class="fab" onclick="openModal()" aria-label="タスクを追加">＋</button>
+
+<div class="modal-overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">タスクを追加</div>
+    <div class="form-row">
+      <label class="form-label">植物の名前</label>
+      <input type="text" id="in-plant" placeholder="例：モンステラ">
+    </div>
+    <div class="form-row">
+      <label class="form-label">やること</label>
+      <input type="text" id="in-task" placeholder="例：水やり">
+    </div>
+    <div class="form-grid form-row">
+      <div>
+        <label class="form-label">頻度（日ごと）</label>
+        <input type="number" id="in-freq" placeholder="7" min="1" max="365">
+      </div>
+      <div>
+        <label class="form-label">最終実施日</label>
+        <input type="date" id="in-last">
+      </div>
+    </div>
+    <button class="submit-btn" onclick="addTask()">追加する</button>
+    <button class="cancel-btn" onclick="closeModal()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'plant_tasks_v2';
+
+function loadTasks() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : getDefaults();
+  } catch(e) { return getDefaults(); }
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function getDefaults() {
+  const fmt = d => d.toISOString().split('T')[0];
+  const ago = n => { let d = new Date(); d.setDate(d.getDate()-n); return fmt(d); };
+  return [
+    { id:1, plant:'モンステラ', task:'水やり',    freq:7,  lastDone: ago(5) },
+    { id:2, plant:'モンステラ', task:'葉っぱ拭き', freq:14, lastDone: ago(12) },
+    { id:3, plant:'ポトス',     task:'水やり',    freq:5,  lastDone: ago(2) },
+  ];
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function daysLeft(lastDone, freq) {
+  const next = new Date(lastDone);
+  next.setDate(next.getDate() + freq);
+  const now = new Date(); now.setHours(0,0,0,0);
+  return Math.ceil((next - now) / 86400000);
+}
+
+function status(dl) {
+  return dl <= 0 ? 'red' : dl <= 2 ? 'amber' : 'green';
+}
+
+function badgeText(dl) {
+  if (dl < 0) return `${Math.abs(dl)}日超過`;
+  if (dl === 0) return '今日！';
+  return `あと${dl}日`;
+}
+
+function pct(lastDone, freq) {
+  const last = new Date(lastDone);
+  const now = new Date(); now.setHours(0,0,0,0);
+  const elapsed = Math.ceil((now - last) / 86400000);
+  return Math.min(100, Math.round(elapsed / freq * 100));
+}
+
+function nextStr(lastDone, freq) {
+  const d = new Date(lastDone);
+  d.setDate(d.getDate() + freq);
+  return d.toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' }) + '日';
+}
+
+let tasks = loadTasks();
+
+function render() {
+  const sorted = [...tasks].sort((a,b) => daysLeft(a.lastDone,a.freq) - daysLeft(b.lastDone,b.freq));
+  const list = document.getElementById('task-list');
+  if (!sorted.length) {
+    list.innerHTML = '<div class="empty">＋ボタンでタスクを追加しよう</div>';
+    document.getElementById('cnt-due').textContent = 0;
+    document.getElementById('cnt-soon').textContent = 0;
+    document.getElementById('cnt-ok').textContent = 0;
+    return;
+  }
+  let due=0, soon=0, ok=0;
+  list.innerHTML = sorted.map(t => {
+    const dl = daysLeft(t.lastDone, t.freq);
+    const st = status(dl);
+    if (st==='red') due++; else if (st==='amber') soon++; else ok++;
+    const p = pct(t.lastDone, t.freq);
+    return `
+    <div class="task-card ${st === 'red' ? 'overdue' : st === 'amber' ? 'soon' : ''}">
+      <div class="card-top">
+        <div>
+          <div class="plant-name">${t.plant}</div>
+          <div class="task-name">${t.task} · ${t.freq}日ごと</div>
+        </div>
+        <div style="display:flex;align-items:center">
+          <span class="badge ${st}">${badgeText(dl)}</span>
+          <button class="del-btn" onclick="deleteTask(${t.id})" title="削除">×</button>
+        </div>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill ${st}" style="width:${p}%"></div></div>
+      <div class="card-bottom">
+        <span class="next-date">次回 ${nextStr(t.lastDone, t.freq)}</span>
+        <button class="done-btn" onclick="markDone(${t.id})">✓ やった！</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('cnt-due').textContent = due;
+  document.getElementById('cnt-soon').textContent = soon;
+  document.getElementById('cnt-ok').textContent = ok;
+
+  const now = new Date();
+  document.getElementById('today-str').textContent = now.toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
+}
+
+function markDone(id) {
+  tasks = tasks.map(t => t.id===id ? {...t, lastDone: today()} : t);
+  saveTasks(tasks);
+  render();
+}
+
+function deleteTask(id) {
+  if (!confirm('このタスクを削除する？')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks(tasks);
+  render();
+}
+
+function openModal() {
+  document.getElementById('in-last').value = today();
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('overlay')) return;
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function addTask() {
+  const plant = document.getElementById('in-plant').value.trim();
+  const task  = document.getElementById('in-task').value.trim();
+  const freq  = parseInt(document.getElementById('in-freq').value);
+  const last  = document.getElementById('in-last').value;
+  if (!plant || !task || !freq || !last) { alert('全項目を入力してね！'); return; }
+  tasks.push({ id: Date.now(), plant, task, freq, lastDone: last });
+  saveTasks(tasks);
+  document.getElementById('in-plant').value = '';
+  document.getElementById('in-task').value  = '';
+  document.getElementById('in-freq').value  = '';
+  document.getElementById('overlay').classList.remove('open');
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
