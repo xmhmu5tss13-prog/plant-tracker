@@ -341,6 +341,110 @@
     cursor: pointer;
     margin-top: 6px;
   }
+
+  select {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7770' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  .plant-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .plant-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--green-bg);
+    color: var(--green);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .chip-del {
+    background: none;
+    border: none;
+    color: var(--green);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 0 0 2px;
+    opacity: 0.6;
+  }
+
+  .chip-del:hover { opacity: 1; }
+
+  .add-plant-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .add-plant-row input {
+    flex: 1;
+  }
+
+  .add-plant-btn {
+    padding: 9px 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+
+  .add-plant-btn:hover { opacity: 0.85; }
+
+  .tab-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font-family: 'DM Sans', sans-serif;
+    transition: color 0.15s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 500;
+  }
 </style>
 </head>
 <body>
@@ -365,32 +469,49 @@
 
 <div class="modal-overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal">
-    <div class="modal-title">タスクを追加</div>
-    <div class="form-row">
-      <label class="form-label">植物の名前</label>
-      <input type="text" id="in-plant" placeholder="例：モンステラ">
+    <div class="tab-row">
+      <button class="tab active" id="tab-task" onclick="switchTab('task')">タスクを追加</button>
+      <button class="tab" id="tab-plant" onclick="switchTab('plant')">植物を管理</button>
     </div>
-    <div class="form-row">
-      <label class="form-label">やること</label>
-      <input type="text" id="in-task" placeholder="例：水やり">
-    </div>
-    <div class="form-grid form-row">
-      <div>
-        <label class="form-label">頻度（日ごと）</label>
-        <input type="number" id="in-freq" placeholder="7" min="1" max="365">
+
+    <div id="panel-task">
+      <div class="form-row">
+        <label class="form-label">植物を選ぶ</label>
+        <select id="in-plant"></select>
       </div>
-      <div>
-        <label class="form-label">最終実施日</label>
-        <input type="date" id="in-last">
+      <div class="form-row">
+        <label class="form-label">やること</label>
+        <input type="text" id="in-task" placeholder="例：水やり">
       </div>
+      <div class="form-grid form-row">
+        <div>
+          <label class="form-label">頻度（日ごと）</label>
+          <input type="number" id="in-freq" placeholder="7" min="1" max="365">
+        </div>
+        <div>
+          <label class="form-label">最終実施日</label>
+          <input type="date" id="in-last">
+        </div>
+      </div>
+      <button class="submit-btn" onclick="addTask()">追加する</button>
+      <button class="cancel-btn" onclick="closeModal()">キャンセル</button>
     </div>
-    <button class="submit-btn" onclick="addTask()">追加する</button>
-    <button class="cancel-btn" onclick="closeModal()">キャンセル</button>
+
+    <div id="panel-plant" style="display:none">
+      <div class="form-label" style="margin-bottom:8px">登録済みの植物</div>
+      <div class="plant-chips" id="plant-chips"></div>
+      <div class="add-plant-row">
+        <input type="text" id="in-new-plant" placeholder="植物名を入力">
+        <button class="add-plant-btn" onclick="addPlant()">追加</button>
+      </div>
+      <button class="cancel-btn" onclick="closeModal()" style="margin-top:1rem">閉じる</button>
+    </div>
   </div>
 </div>
 
 <script>
 const STORAGE_KEY = 'plant_tasks_v2';
+const PLANTS_KEY  = 'plant_list_v1';
 
 function loadTasks() {
   try {
@@ -401,6 +522,17 @@ function loadTasks() {
 
 function saveTasks(tasks) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function loadPlants() {
+  try {
+    const raw = localStorage.getItem(PLANTS_KEY);
+    return raw ? JSON.parse(raw) : ['モンステラ', 'ポトス'];
+  } catch(e) { return ['モンステラ', 'ポトス']; }
+}
+
+function savePlants(plants) {
+  localStorage.setItem(PLANTS_KEY, JSON.stringify(plants));
 }
 
 function getDefaults() {
@@ -445,7 +577,53 @@ function nextStr(lastDone, freq) {
   return d.toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' }) + '日';
 }
 
-let tasks = loadTasks();
+let tasks  = loadTasks();
+let plants = loadPlants();
+
+function renderPlantSelect() {
+  const sel = document.getElementById('in-plant');
+  sel.innerHTML = plants.length
+    ? plants.map(p => `<option value="${p}">${p}</option>`).join('')
+    : '<option value="" disabled selected>先に植物を登録してね</option>';
+}
+
+function renderPlantChips() {
+  const chips = document.getElementById('plant-chips');
+  chips.innerHTML = plants.length
+    ? plants.map(p => `
+      <div class="plant-chip">
+        ${p}
+        <button class="chip-del" onclick="deletePlant('${p}')" title="削除">×</button>
+      </div>`).join('')
+    : '<span style="font-size:13px;color:var(--muted)">まだ登録されていないよ</span>';
+}
+
+function addPlant() {
+  const name = document.getElementById('in-new-plant').value.trim();
+  if (!name) return;
+  if (plants.includes(name)) { alert('その植物はすでに登録されてるよ！'); return; }
+  plants.push(name);
+  savePlants(plants);
+  document.getElementById('in-new-plant').value = '';
+  renderPlantChips();
+  renderPlantSelect();
+}
+
+function deletePlant(name) {
+  if (!confirm(`「${name}」を削除する？\n（この植物のタスクは残ります）`)) return;
+  plants = plants.filter(p => p !== name);
+  savePlants(plants);
+  renderPlantChips();
+  renderPlantSelect();
+}
+
+function switchTab(tab) {
+  document.getElementById('panel-task').style.display  = tab === 'task'  ? 'block' : 'none';
+  document.getElementById('panel-plant').style.display = tab === 'plant' ? 'block' : 'none';
+  document.getElementById('tab-task').classList.toggle('active',  tab === 'task');
+  document.getElementById('tab-plant').classList.toggle('active', tab === 'plant');
+  if (tab === 'plant') renderPlantChips();
+}
 
 function render() {
   const sorted = [...tasks].sort((a,b) => daysLeft(a.lastDone,a.freq) - daysLeft(b.lastDone,b.freq));
@@ -505,6 +683,8 @@ function deleteTask(id) {
 
 function openModal() {
   document.getElementById('in-last').value = today();
+  renderPlantSelect();
+  switchTab('task');
   document.getElementById('overlay').classList.add('open');
 }
 
@@ -514,14 +694,13 @@ function closeModal(e) {
 }
 
 function addTask() {
-  const plant = document.getElementById('in-plant').value.trim();
+  const plant = document.getElementById('in-plant').value;
   const task  = document.getElementById('in-task').value.trim();
   const freq  = parseInt(document.getElementById('in-freq').value);
   const last  = document.getElementById('in-last').value;
   if (!plant || !task || !freq || !last) { alert('全項目を入力してね！'); return; }
   tasks.push({ id: Date.now(), plant, task, freq, lastDone: last });
   saveTasks(tasks);
-  document.getElementById('in-plant').value = '';
   document.getElementById('in-task').value  = '';
   document.getElementById('in-freq').value  = '';
   document.getElementById('overlay').classList.remove('open');
